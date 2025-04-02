@@ -1,74 +1,84 @@
 import { supabase } from '@/lib/supabase';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: { params: { id: string } }
 ) {
+  const { id } = context.params;
+
   try {
-    const { id } = params;
-    
     const { data, error } = await supabase
       .from('presets')
       .select('*')
       .eq('id', id)
       .single();
-    
+
     if (error) {
-      throw error;
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
-    
-    return NextResponse.json({ preset: data });
+
+    return NextResponse.json(data);
   } catch (error) {
     console.error('Error fetching preset:', error);
-    return NextResponse.json({ error: 'Failed to fetch preset' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to fetch preset' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(
+  request: NextRequest,
+  context: { params: { id: string } }
+) {
+  const { id } = context.params;
+  const body = await request.json();
+
+  try {
+    const { data, error } = await supabase
+      .from('presets')
+      .update(body)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error('Error updating preset:', error);
+    return NextResponse.json(
+      { error: 'Failed to update preset' },
+      { status: 500 }
+    );
   }
 }
 
 export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: { params: { id: string } }
 ) {
+  const { id } = context.params;
+
   try {
-    const { id } = params;
-    
     const { error } = await supabase
       .from('presets')
       .delete()
       .eq('id', id);
-    
+
     if (error) {
-      throw error;
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
-    
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting preset:', error);
-    return NextResponse.json({ error: 'Failed to delete preset' }, { status: 500 });
-  }
-}
-
-export async function PATCH(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const { id } = params;
-    const updates = await request.json();
-    
-    const { data, error } = await supabase
-      .from('presets')
-      .update(updates)
-      .eq('id', id)
-      .select();
-    
-    if (error) {
-      throw error;
-    }
-    
-    return NextResponse.json({ preset: data[0] });
-  } catch (error) {
-    console.error('Error updating preset:', error);
-    return NextResponse.json({ error: 'Failed to update preset' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to delete preset' },
+      { status: 500 }
+    );
   }
 }
